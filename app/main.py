@@ -11,6 +11,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from dotenv import load_dotenv
 
 from app import db, reports
+from html import escape
 
 load_dotenv()
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -30,6 +31,23 @@ HELP = (
     "/authors — авторы / Contributors\n"
     "/help — справка / Help"
 )
+
+STATUS = {
+    "pending": "На проверке / Pending",
+    "approved": "Одобрено / Approved",
+    "rejected": "Отклонено / Rejected",
+    "published": "Опубликовано / Published",
+}
+
+async def notify_author(bot, row, sid, status):
+    """Best-effort status notification / Уведомление без влияния на модерацию."""
+    try:
+        await bot.send_message(
+            row["user_id"],
+            f"Статус предложения #{sid} изменён / Submission status updated:\\n"
+            f"{STATUS[status]}".replace("\\\\n", "\\n"))
+    except Exception:
+        logging.exception("Unable to notify author for submission %s", sid)
 
 def keyboard(sid, approved=False):
     if approved:
@@ -56,12 +74,28 @@ async def start(m: Message):
     else:
         await m.answer("Предложка «Опорники СТАНКА».\n"
                        "Отправьте текст, фото, видео, GIF или документ.\n"
-                       "Submit a text, photo, video, GIF or document.")
+                       "Submit a text, photo, video, GIF or document.\n"\n                       "/my — мои предложения / My submissions.")
 
 @dp.message(Command("help"))
 async def help_command(m: Message):
     if is_admin(m):
         await send_report(m, HELP)
+
+@dp.message(Command("my"))
+async def my_command(m: Message):
+    if m.chat.type != "private" or not m.from_user:
+        return
+    rows = await db.my_submissions(pool, m.from_user.id)
+    if not rows:
+        await m.answer("У вас пока нет предложений. / No submissions yet.")
+        return
+    lines = ["<b>Мои предложения / My submissions</b>",
+             "<i>Последние 10 / Latest 10</i>"]
+    for r in rows:
+        date = r["created_local"].strftime("%d.%m.%Y %H:%M")
+        lines.append(f"#{r['id']} · {escape(r['content_type'])} · {date} МСК\\n"
+                     f"{STATUS.get(r['status'], escape(r['status']))}")
+    await send_report(m, "\\n\\n".join(lines).replace("\\\\n", "\\n"))
 
 @dp.message(Command("stats"))
 async def stats_command(m: Message):
@@ -117,6 +151,7 @@ async def moderate(c: CallbackQuery, bot: Bot):
             return
         await db.published(pool, sid, ADMIN_ID)
         await c.message.edit_reply_markup(reply_markup=None)
+        await notify_author(bot, item, sid, "published")
         await c.answer("Опубликовано / Published")
         return
     row = await db.review(pool, sid, ADMIN_ID, action)
@@ -125,6 +160,7 @@ async def moderate(c: CallbackQuery, bot: Bot):
         return
     await c.message.edit_reply_markup(
         reply_markup=keyboard(sid, True) if action == "approve" else None)
+    await notify_author(bot, row, sid, row["status"])
     await c.answer("Готово / Done")
 
 @dp.message(F.chat.type == "private")
@@ -147,7 +183,8 @@ async def incoming(m: Message, bot: Bot):
         logging.exception("Admin notification failed")
         await m.answer("Сообщение сохранено, уведомление временно недоступно. / Saved; notification unavailable.")
         return
-    await m.answer("Предложение получено! / Submission received!")
+    await m.answer(f"Предложение #{sid} получено! / Submission received!\\n"
+                   "Проверить статус: /my".replace("\\\\n", "\\n"))
 
 async def main():
     global pool

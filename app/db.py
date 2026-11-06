@@ -92,3 +92,14 @@ async def report(pool):
         FROM submissions WHERE created_at >= now()-interval '7 days'
         GROUP BY 1 ORDER BY 1 DESC
     """)
+
+async def my_submissions(pool, user_id, limit=10):
+    """Return only the requesting author's submissions / Только свои предложения."""
+    return await pool.fetch(
+        """SELECT id, status, content_type,
+                  (created_at AT TIME ZONE 'Europe/Moscow') AS created_local
+           FROM submissions
+           WHERE user_id=$1
+           ORDER BY created_at DESC, id DESC
+           LIMIT $2""",
+        user_id, limit)

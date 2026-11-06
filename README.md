@@ -15,6 +15,7 @@
 | Команда / Command | Назначение / Purpose |
 |---|---|
 | /help | Справка / Help |
+| /my | Мои предложения (только автор) / My submissions |
 | /stats | Общая статистика / Overview |
 | /report | Полный отчёт (5 сообщений) / Full report |
 | /daily | По дням (7 дней, МСК) / Daily |
@@ -51,3 +52,8 @@ SQL-примеры / SQL examples: [sql/analytics.sql](sql/analytics.sql).
 **RU:** MVP поддерживает одного администратора и одиночные сообщения. Группировка альбомов, ответы авторам, антиспам, резервные копии и гарантия публикации ровно один раз пока не реализованы. SQL-отчёты показывают агрегаты, а не личные данные.
 
 **EN:** MVP supports one admin and single-message submissions. Albums, reply relay, rate limiting, backups and exactly-once publishing are not implemented yet.
+
+### Личный кабинет / My submissions
+**RU:** Команда `/my` показывает пользователю только его последние 10 предложений и текущие статусы. После одобрения, отклонения или публикации бот пытается уведомить автора. Неудачная отправка уведомления не отменяет решение администратора.
+
+**EN:** `/my` displays only the user's latest 10 submissions and their statuses. The bot attempts to notify the author when a submission is approved, rejected or published. Failed notifications do not roll back moderation.

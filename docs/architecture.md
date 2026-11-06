@@ -38,3 +38,9 @@
 ## Ограничения / Known limitations
 **RU:** Один администратор; нет альбомов, ответов авторам, антиспама и гарантии exactly-once публикации. 
 **EN:** Single admin; no albums, reply relay, rate limiting or exactly-once publication guarantee.
+
+## Личный статус / Personal submission status
+- FR-08: Команда `/my` выдаёт последние 10 предложений исключительно владельцу по Telegram ID / Show the owner's latest 10 submissions only.
+- FR-09: После изменения статуса отправлять уведомление автору по возможности / Attempt a status notification on moderation transitions.
+- **Безопасность / Security:** запрос использует параметр `WHERE user_id=$1`, полученный из Telegram `from_user.id`, а не произвольный ID из текста пользователя.
+- **Ограничение / Limitation:** уведомление может не доставиться, например если пользователь заблокировал бота.
