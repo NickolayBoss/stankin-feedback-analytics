@@ -1,30 +1,53 @@
 # STANKIN Feedback Analytics Platform
+## Платформа аналитики предложений СТАНКИНа / STANKIN Feedback Analytics Platform
 
-Telegram feedback moderation and SQL analytics for a university community.
+**RU:** Telegram-бот для сбора предложений студентов, модерации, хранения событий в PostgreSQL и получения SQL-отчётов прямо в Telegram администратора.
 
-## Features
-- Receive text, photo, video, GIF, and document submissions
-- Private admin notifications, approve/reject/publish controls
-- PostgreSQL database, audit trail, SQL reports in Telegram
-- Admin commands: `/stats`, `/report`
-- Docker Compose deployment
+**EN:** Telegram bot for student submissions, moderation, PostgreSQL event storage and SQL-powered admin reports delivered in Telegram.
 
-## Quick start
-1. Install Docker Desktop.
-2. Copy `.env.example` to `.env`.
-3. Set `BOT_TOKEN` from BotFather, numeric `ADMIN_ID`, and a strong database password.
-4. Open your bot in Telegram and press Start.
-5. Run `docker compose up --build -d`.
-6. Send a submission from a different Telegram account.
-7. Optional: grant the bot channel posting rights and set `CHANNEL_ID` to enable Publish.
+### Возможности / Features
+- Приём сообщений / Submission intake: текст, фото, видео, GIF, файлы
+- Модерация / Moderation: одобрить, отклонить, опубликовать
+- Аналитика / Analytics: SQL-метрики, таблицы, ежедневная динамика
+- Безопасность / Security: только администратор видит отчёты
 
-The repository contains **no secrets**. Never commit `.env` or real user data. GitHub stores source code, not a running bot: 24/7 operation requires an always-on host.
+### Команды / Commands
+| Команда / Command | Назначение / Purpose |
+|---|---|
+| /help | Справка / Help |
+| /stats | Общая статистика / Overview |
+| /report | Полный отчёт (5 сообщений) / Full report |
+| /daily | По дням (7 дней, МСК) / Daily |
+| /formats | Типы контента / Content types |
+| /moderation | Скорость обработки / Moderation performance |
+| /authors | Уникальные и повторные авторы / Contributors |
 
-## Architecture
-Telegram -> aiogram -> PostgreSQL -> SQL analytics -> admin Telegram chat
+### Запуск / Run
+1. Установите Docker Desktop / Install Docker Desktop.
+2. Скопируйте \`.env.example\` в \`.env\` / Copy the environment template.
+3. Заполните \`BOT_TOKEN\`, \`ADMIN_ID\`, \`POSTGRES_PASSWORD\` и пароль в \`DATABASE_URL\` / Fill in credentials locally.
+4. Откройте диалог с ботом и нажмите Start / Start the bot chat.
+5. Выполните \`docker compose up --build -d\` / Run Docker Compose.
+6. Проверьте отправку предложения с другого Telegram-аккаунта / Test a submission from another account.
 
-Tables: users, submissions, moderation_events. SQL examples in `sql/analytics.sql`.
-Requirements and known limitations in `docs/architecture.md`.
+**RU:** Чтобы включить публикацию, назначьте бота администратором канала с правом публикации и укажите \`CHANNEL_ID\`. Для круглосуточной работы нужен постоянно работающий сервер.
 
-## Current scope
-Initial MVP, one administrator, polling, single-message submissions. No web dashboard, anonymous reply relay, album grouping, rate limiting, automatic backups or exactly-once publishing yet.
+**EN:** To enable channel posting, grant the bot posting rights and configure \`CHANNEL_ID\`. Always-on hosting is required for 24/7 operation.
+
+### Архитектура / Architecture
+\`Telegram -> aiogram -> PostgreSQL -> SQL -> Telegram admin reports\`
+
+Сущности / Entities: \`users\`, \`submissions\`, \`moderation_events\`.
+
+SQL-примеры / SQL examples: [sql/analytics.sql](sql/analytics.sql).  
+Требования и KPI / Requirements and KPIs: [docs/architecture.md](docs/architecture.md).
+
+### Секреты / Secrets
+**RU:** Никогда не загружайте \`.env\`, токены, пароли или дампы базы данных в публичный репозиторий. \`.env.example\` содержит только примеры. Если токен уже был опубликован, перевыпустите его через BotFather.
+
+**EN:** Never commit secrets, credentials, or real database dumps. Rotate any previously exposed tokens.
+
+### Ограничения / Limitations
+**RU:** MVP поддерживает одного администратора и одиночные сообщения. Группировка альбомов, ответы авторам, антиспам, резервные копии и гарантия публикации ровно один раз пока не реализованы. SQL-отчёты показывают агрегаты, а не личные данные.
+
+**EN:** MVP supports one admin and single-message submissions. Albums, reply relay, rate limiting, backups and exactly-once publishing are not implemented yet.

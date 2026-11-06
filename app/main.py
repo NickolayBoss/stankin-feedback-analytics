@@ -1,13 +1,16 @@
+"""STANKIN Telegram bot / Telegram-бот для предложений и SQL-аналитики."""
 import asyncio
 import logging
 import os
 
 import asyncpg
 from aiogram import Bot, Dispatcher, F
+from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from dotenv import load_dotenv
-from app import db
+
+from app import db, reports
 
 load_dotenv()
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -17,92 +20,134 @@ CHANNEL_ID = os.getenv("CHANNEL_ID", "").strip()
 dp = Dispatcher()
 pool = None
 
+HELP = (
+    "<b>Панель администратора / Admin panel</b>\n"
+    "/stats — общая статистика / Overview\n"
+    "/report — полный отчёт / Full report\n"
+    "/daily — по дням / Daily\n"
+    "/formats — форматы / Content types\n"
+    "/moderation — модерация / Moderation\n"
+    "/authors — авторы / Contributors\n"
+    "/help — справка / Help"
+)
+
 def keyboard(sid, approved=False):
     if approved:
         return InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Опубликовать",callback_data=f"publish:{sid}")]
+            [InlineKeyboardButton(text="Опубликовать / Publish", callback_data=f"publish:{sid}")]
         ])
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Одобрить",callback_data=f"approve:{sid}"),
-         InlineKeyboardButton(text="Отклонить",callback_data=f"reject:{sid}")]
-    ])
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="Одобрить / Approve", callback_data=f"approve:{sid}"),
+        InlineKeyboardButton(text="Отклонить / Reject", callback_data=f"reject:{sid}")
+    ]])
+
+def is_admin(m):
+    return m.chat.type == "private" and m.from_user and m.from_user.id == ADMIN_ID
+
+async def send_report(m, text):
+    await m.answer(text, parse_mode=ParseMode.HTML)
 
 @dp.message(CommandStart())
 async def start(m: Message):
-    if m.chat.type != "private": return
-    if m.from_user.id == ADMIN_ID:
-        await m.answer("Панель администратора. Команды: /stats, /report")
+    if m.chat.type != "private":
+        return
+    if is_admin(m):
+        await send_report(m, HELP)
     else:
-        await m.answer("Предложка «Опорники СТАНКА». Пришлите текст, фото, видео или файл.")
+        await m.answer("Предложка «Опорники СТАНКА».\n"
+                       "Отправьте текст, фото, видео, GIF или документ.\n"
+                       "Submit a text, photo, video, GIF or document.")
+
+@dp.message(Command("help"))
+async def help_command(m: Message):
+    if is_admin(m):
+        await send_report(m, HELP)
 
 @dp.message(Command("stats"))
-async def stats(m: Message):
-    if m.chat.type != "private" or m.from_user.id != ADMIN_ID: return
-    s = await db.stats(pool)
-    await m.answer(
-        f"SQL-отчёт\nВсего: {s['total']}\nОжидают: {s['pending']}\n"
-        f"Одобрено: {s['approved']}\nОтклонено: {s['rejected']}\n"
-        f"Опубликовано: {s['published']}\nАвторов: {s['authors']}\n"
-        f"Доля одобрений: {s['approval_rate'] or 0}%\n"
-        f"Среднее время проверки: {s['review_minutes'] or 0} мин")
+async def stats_command(m: Message):
+    if is_admin(m):
+        await send_report(m, await reports.overview(pool))
+
+@dp.message(Command("daily"))
+async def daily_command(m: Message):
+    if is_admin(m):
+        await send_report(m, await reports.daily(pool))
+
+@dp.message(Command("formats"))
+async def formats_command(m: Message):
+    if is_admin(m):
+        await send_report(m, await reports.formats(pool))
+
+@dp.message(Command("moderation"))
+async def moderation_command(m: Message):
+    if is_admin(m):
+        await send_report(m, await reports.moderation(pool))
+
+@dp.message(Command("authors"))
+async def authors_command(m: Message):
+    if is_admin(m):
+        await send_report(m, await reports.authors(pool))
 
 @dp.message(Command("report"))
-async def report(m: Message):
-    if m.chat.type != "private" or m.from_user.id != ADMIN_ID: return
-    rows = await db.report(pool)
-    await m.answer("\n".join(["Последние 7 дней: получено / принято"] +
-        [f"{r['day']}: {r['received']} / {r['accepted']}" for r in rows]))
+async def report_command(m: Message):
+    if is_admin(m):
+        for section in await reports.full_report(pool):
+            await send_report(m, section)
 
 @dp.callback_query(F.data.regexp(r"^(approve|reject|publish):[0-9]+$"))
 async def moderate(c: CallbackQuery, bot: Bot):
-    if c.from_user.id != ADMIN_ID:
-        await c.answer("Нет доступа",show_alert=True)
+    if c.from_user.id != ADMIN_ID or not c.message:
+        await c.answer("Нет доступа / Unauthorized", show_alert=True)
         return
     action, value = c.data.split(":")
     sid = int(value)
     if action == "publish":
         if not CHANNEL_ID:
-            await c.answer("CHANNEL_ID не настроен",show_alert=True)
+            await c.answer("CHANNEL_ID не настроен / Not configured", show_alert=True)
             return
-        item = await db.get(pool,sid)
+        item = await db.get(pool, sid)
         if not item or item["status"] != "approved":
-            await c.answer("Сначала одобрите или запись уже обработана",show_alert=True)
+            await c.answer("Сначала одобрите / Approve first", show_alert=True)
             return
         try:
-            await bot.copy_message(CHANNEL_ID,item["chat_id"],item["message_id"])
+            await bot.copy_message(CHANNEL_ID, item["chat_id"], item["message_id"])
         except Exception:
-            logging.exception("Publish failed")
-            await c.answer("Ошибка публикации",show_alert=True)
+            logging.exception("Publishing failed")
+            await c.answer("Ошибка публикации / Publishing error", show_alert=True)
             return
-        await db.published(pool,sid,ADMIN_ID)
+        await db.published(pool, sid, ADMIN_ID)
         await c.message.edit_reply_markup(reply_markup=None)
-        await c.answer("Опубликовано")
+        await c.answer("Опубликовано / Published")
         return
-    row = await db.review(pool,sid,ADMIN_ID,action)
+    row = await db.review(pool, sid, ADMIN_ID, action)
     if not row:
-        await c.answer("Уже обработано",show_alert=True)
+        await c.answer("Уже обработано / Already reviewed", show_alert=True)
         return
-    await c.message.edit_reply_markup(reply_markup=keyboard(sid,True) if action=="approve" else None)
-    await c.answer("Готово")
+    await c.message.edit_reply_markup(
+        reply_markup=keyboard(sid, True) if action == "approve" else None)
+    await c.answer("Готово / Done")
 
 @dp.message(F.chat.type == "private")
 async def incoming(m: Message, bot: Bot):
-    if m.from_user.id == ADMIN_ID:
-        await m.answer("Команды администратора: /stats, /report")
+    if is_admin(m):
+        await send_report(m, HELP)
         return
-    if m.content_type not in ("text","photo","video","document","animation"):
-        await m.answer("Отправьте текст, фото, видео, GIF или документ.")
+    if not m.from_user:
         return
-    sid = await db.insert(pool,m.from_user,m)
-    if sid is None: return
+    if m.content_type not in ("text", "photo", "video", "document", "animation"):
+        await m.answer("Поддерживаются текст, фото, видео, GIF и файлы. / Unsupported format.")
+        return
+    sid = await db.insert(pool, m.from_user, m)
+    if sid is None:
+        return
     try:
-        await bot.send_message(ADMIN_ID,f"Новое предложение #{sid} · {m.content_type}")
-        await bot.copy_message(ADMIN_ID,m.chat.id,m.message_id,reply_markup=keyboard(sid))
+        await bot.send_message(ADMIN_ID, f"Новое предложение / New submission #{sid} · {m.content_type}")
+        await bot.copy_message(ADMIN_ID, m.chat.id, m.message_id, reply_markup=keyboard(sid))
     except Exception:
         logging.exception("Admin notification failed")
-        await m.answer("Сообщение сохранено, но уведомление пока недоступно.")
+        await m.answer("Сообщение сохранено, уведомление временно недоступно. / Saved; notification unavailable.")
         return
-    await m.answer("Предложение получено!")
+    await m.answer("Предложение получено! / Submission received!")
 
 async def main():
     global pool
