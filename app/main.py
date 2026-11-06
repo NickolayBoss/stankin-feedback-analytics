@@ -74,7 +74,8 @@ async def start(m: Message):
     else:
         await m.answer("Предложка «Опорники СТАНКА».\n"
                        "Отправьте текст, фото, видео, GIF или документ.\n"
-                       "Submit a text, photo, video, GIF or document.\n"\n                       "/my — мои предложения / My submissions.")
+                       "Submit a text, photo, video, GIF or document.\n"
+                       "/my — мои предложения / My submissions.")
 
 @dp.message(Command("help"))
 async def help_command(m: Message):
