@@ -44,8 +44,8 @@ async def notify_author(bot, row, sid, status):
     try:
         await bot.send_message(
             row["user_id"],
-            f"Статус предложения #{sid} изменён / Submission status updated:\\n"
-            f"{STATUS[status]}".replace("\\\\n", "\\n"))
+            f"Статус предложения #{sid} изменён / Submission status updated:\n"
+            f"{STATUS[status]}".replace("\\\n", "\n"))
     except Exception:
         logging.exception("Unable to notify author for submission %s", sid)
 
@@ -94,9 +94,9 @@ async def my_command(m: Message):
              "<i>Последние 10 / Latest 10</i>"]
     for r in rows:
         date = r["created_local"].strftime("%d.%m.%Y %H:%M")
-        lines.append(f"#{r['id']} · {escape(r['content_type'])} · {date} МСК\\n"
+        lines.append(f"#{r['id']} · {escape(r['content_type'])} · {date} МСК\n"
                      f"{STATUS.get(r['status'], escape(r['status']))}")
-    await send_report(m, "\\n\\n".join(lines).replace("\\\\n", "\\n"))
+    await send_report(m, "\n\n".join(lines).replace("\\\n", "\n"))
 
 @dp.message(Command("stats"))
 async def stats_command(m: Message):
@@ -184,8 +184,8 @@ async def incoming(m: Message, bot: Bot):
         logging.exception("Admin notification failed")
         await m.answer("Сообщение сохранено, уведомление временно недоступно. / Saved; notification unavailable.")
         return
-    await m.answer(f"Предложение #{sid} получено! / Submission received!\\n"
-                   "Проверить статус: /my".replace("\\\\n", "\\n"))
+    await m.answer(f"Предложение #{sid} получено! / Submission received!\n"
+                   "Проверить статус: /my".replace("\\\n", "\n"))
 
 async def main():
     global pool
