@@ -57,3 +57,9 @@ SQL-примеры / SQL examples: [sql/analytics.sql](sql/analytics.sql).
 **RU:** Команда `/my` показывает пользователю только его последние 10 предложений и текущие статусы. После одобрения, отклонения или публикации бот пытается уведомить автора. Неудачная отправка уведомления не отменяет решение администратора.
 
 **EN:** `/my` displays only the user's latest 10 submissions and their statuses. The bot attempts to notify the author when a submission is approved, rejected or published. Failed notifications do not roll back moderation.
+
+### SQL-first portfolio / SQL как основа портфолио
+
+**RU:** [8 отдельных SQL-модулей](sql/README.md) показывают реляционную модель, проверки качества, KPI, воронку модерации, p50/p90, когортный анализ, оконные функции, витрины и синтетический набор данных. [Аналитический кейс](docs/sql-case-study.md) объясняет бизнес-смысл расчётов.
+
+**EN:** [8 SQL modules](sql/README.md) demonstrate data modeling, quality checks, KPIs, moderation funnel, latency percentiles, cohorts, window functions, views and synthetic data. Read the [SQL case study](docs/sql-case-study.md).
