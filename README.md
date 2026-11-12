@@ -17,14 +17,14 @@ How can a university identify recurring feedback problems, monitor response dela
 Requires PostgreSQL 15+ and `psql`. Create an empty database:
 ```bash
 createdb feedback_analytics
-for file in sql/*.sql; do psql -v ON_ERROR_STOP=1 -d feedback_analytics -f "$file"; done
+for file in sql/00_demo_schema.sql sql/02_seed.sql sql/03_analytics.sql sql/04_trends.sql sql/05_quality.sql; do psql -v ON_ERROR_STOP=1 -d feedback_analytics -f "$file"; done
 ```
 Use synthetic data only. Do not commit credentials.
 
 ## Project map
 | File | Responsibility |
 |---|---|
-| [01_schema.sql](sql/01_schema.sql) | Database model and indexes |
+| [00_demo_schema.sql](sql/00_demo_schema.sql) | Standalone analytics database model and indexes |
 | [02_seed.sql](sql/02_seed.sql) | 500 synthetic submissions |
 | [03_analytics.sql](sql/03_analytics.sql) | KPI views and percentile metrics |
 | [04_trends.sql](sql/04_trends.sql) | Window functions and emerging issues |
@@ -41,7 +41,7 @@ flowchart LR
   C --> F[Weekly trend analysis]
 ```
 
-## Current status
+The existing [01_schema.sql](sql/01_schema.sql) is a separate legacy Telegram reference schema and is not required for this standalone demo.\n\n## Current status
 **SQL analytics prototype.** A production Telegram bot, automated moderation, deployed dashboard and end-to-end tests are **not yet implemented**. The project is intended to be reproducible and extended in later iterations.
 
 Maintainer: [NickolayBoss](https://github.com/NickolayBoss).
