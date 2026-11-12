@@ -12,8 +12,7 @@ jobs:
           POSTGRES_USER: feedback
           POSTGRES_PASSWORD: ci_only_password
           POSTGRES_DB: feedback_analytics
-        ports:
-          - 5432:5432
+        ports: [5432]
         options: >-
           --health-cmd "pg_isready -U feedback -d feedback_analytics"
           --health-interval 5s --health-timeout 5s --health-retries 10
@@ -24,15 +23,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
-      - name: Python checks
-        run: python -m compileall -q app.py && pytest -q
-      - name: PostgreSQL integration checks
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q app.py && pytest -q
+      - name: PostgreSQL integration
         run: |
           for file in sql/00_demo_schema.sql sql/02_seed.sql sql/03_analytics.sql sql/04_trends.sql sql/05_quality.sql; do
-            psql -h localhost -U feedback -d feedback_analytics -v ON_ERROR_STOP=1 -f "$file" > /dev/null
+            psql -h localhost -p 5432 -U feedback -d feedback_analytics -v ON_ERROR_STOP=1 -f "$file" > /dev/null
           done
           test "$(psql -h localhost -U feedback -d feedback_analytics -Atc 'SELECT count(*) FROM feedback')" = "500"
-          test "$(psql -h localhost -U feedback -d feedback_analytics -Atc "SELECT count(*) FROM ($(printf "SELECT 'x' AS check_name, 0 AS failures") ) AS checks WHERE failures<>0")" = "0"
-          psql -h localhost -U feedback -d feedback_analytics -Atc "SELECT * FROM kpi_overview"
+          test "$(psql -h localhost -U feedback -d feedback_analytics -Atc 'SELECT count(*) FROM kpi_overview')" = "1"
+          test "$(psql -h localhost -U feedback -d feedback_analytics -Atc "SELECT count(*) FROM feedback WHERE status='resolved' AND resolved_at IS NULL")" = "0"
