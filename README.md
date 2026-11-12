@@ -1,65 +1,47 @@
-# STANKIN Feedback Analytics Platform
-## Платформа аналитики предложений СТАНКИНа / STANKIN Feedback Analytics Platform
+# STANKIN Feedback Intelligence
 
-**RU:** Telegram-бот для сбора предложений студентов, модерации, хранения событий в PostgreSQL и получения SQL-отчётов прямо в Telegram администратора.
+**SQL-first analytics portfolio project · PostgreSQL · Business Analysis**
 
-**EN:** Telegram bot for student submissions, moderation, PostgreSQL event storage and SQL-powered admin reports delivered in Telegram.
+> Independent portfolio demonstration, **not an official STANKIN service**. Data is entirely synthetic.
 
-### Возможности / Features
-- Приём сообщений / Submission intake: текст, фото, видео, GIF, файлы
-- Модерация / Moderation: одобрить, отклонить, опубликовать
-- Аналитика / Analytics: SQL-метрики, таблицы, ежедневная динамика
-- Безопасность / Security: только администратор видит отчёты
+## Business challenge
+How can a university identify recurring feedback problems, monitor response delays and compare department performance?
 
-### Команды / Commands
-| Команда / Command | Назначение / Purpose |
+## Skills demonstrated
+- PostgreSQL: relational schema, foreign keys, CHECK constraints and partial indexes.
+- SQL: aggregations, CTEs, window functions (`LAG`), percentiles and KPI views.
+- Analytics: response SLA, resolution rate, CSAT, backlog aging and weekly growth.
+- Business analysis: KPI contracts, stakeholders, acceptance criteria and limitations.
+
+## Run locally
+Requires PostgreSQL 15+ and `psql`. Create an empty database:
+```bash
+createdb feedback_analytics
+for file in sql/*.sql; do psql -v ON_ERROR_STOP=1 -d feedback_analytics -f "$file"; done
+```
+Use synthetic data only. Do not commit credentials.
+
+## Project map
+| File | Responsibility |
 |---|---|
-| /help | Справка / Help |
-| /my | Мои предложения (только автор) / My submissions |
-| /stats | Общая статистика / Overview |
-| /report | Полный отчёт (5 сообщений) / Full report |
-| /daily | По дням (7 дней, МСК) / Daily |
-| /formats | Типы контента / Content types |
-| /moderation | Скорость обработки / Moderation performance |
-| /authors | Уникальные и повторные авторы / Contributors |
+| [01_schema.sql](sql/01_schema.sql) | Database model and indexes |
+| [02_seed.sql](sql/02_seed.sql) | 500 synthetic submissions |
+| [03_analytics.sql](sql/03_analytics.sql) | KPI views and percentile metrics |
+| [04_trends.sql](sql/04_trends.sql) | Window functions and emerging issues |
+| [05_quality.sql](sql/05_quality.sql) | Data integrity checks |
+| [Case study](docs/case-study.md) | Business requirements and metric definitions |
 
-### Запуск / Run
-1. Установите Docker Desktop / Install Docker Desktop.
-2. Скопируйте \`.env.example\` в \`.env\` / Copy the environment template.
-3. Заполните \`BOT_TOKEN\`, \`ADMIN_ID\`, \`POSTGRES_PASSWORD\` и пароль в \`DATABASE_URL\` / Fill in credentials locally.
-4. Откройте диалог с ботом и нажмите Start / Start the bot chat.
-5. Выполните \`docker compose up --build -d\` / Run Docker Compose.
-6. Проверьте отправку предложения с другого Telegram-аккаунта / Test a submission from another account.
+## Data flow
+```mermaid
+flowchart LR
+  A[Synthetic feedback] --> B[(PostgreSQL)]
+  B --> C[SQL KPI views]
+  B --> D[Data quality checks]
+  C --> E[Performance reporting]
+  C --> F[Weekly trend analysis]
+```
 
-**RU:** Чтобы включить публикацию, назначьте бота администратором канала с правом публикации и укажите \`CHANNEL_ID\`. Для круглосуточной работы нужен постоянно работающий сервер.
+## Current status
+**SQL analytics prototype.** A production Telegram bot, automated moderation, deployed dashboard and end-to-end tests are **not yet implemented**. The project is intended to be reproducible and extended in later iterations.
 
-**EN:** To enable channel posting, grant the bot posting rights and configure \`CHANNEL_ID\`. Always-on hosting is required for 24/7 operation.
-
-### Архитектура / Architecture
-\`Telegram -> aiogram -> PostgreSQL -> SQL -> Telegram admin reports\`
-
-Сущности / Entities: \`users\`, \`submissions\`, \`moderation_events\`.
-
-SQL-примеры / SQL examples: [sql/analytics.sql](sql/analytics.sql).  
-Требования и KPI / Requirements and KPIs: [docs/architecture.md](docs/architecture.md).
-
-### Секреты / Secrets
-**RU:** Никогда не загружайте \`.env\`, токены, пароли или дампы базы данных в публичный репозиторий. \`.env.example\` содержит только примеры. Если токен уже был опубликован, перевыпустите его через BotFather.
-
-**EN:** Never commit secrets, credentials, or real database dumps. Rotate any previously exposed tokens.
-
-### Ограничения / Limitations
-**RU:** MVP поддерживает одного администратора и одиночные сообщения. Группировка альбомов, ответы авторам, антиспам, резервные копии и гарантия публикации ровно один раз пока не реализованы. SQL-отчёты показывают агрегаты, а не личные данные.
-
-**EN:** MVP supports one admin and single-message submissions. Albums, reply relay, rate limiting, backups and exactly-once publishing are not implemented yet.
-
-### Личный кабинет / My submissions
-**RU:** Команда `/my` показывает пользователю только его последние 10 предложений и текущие статусы. После одобрения, отклонения или публикации бот пытается уведомить автора. Неудачная отправка уведомления не отменяет решение администратора.
-
-**EN:** `/my` displays only the user's latest 10 submissions and their statuses. The bot attempts to notify the author when a submission is approved, rejected or published. Failed notifications do not roll back moderation.
-
-### SQL-first portfolio / SQL как основа портфолио
-
-**RU:** [8 отдельных SQL-модулей](sql/README.md) показывают реляционную модель, проверки качества, KPI, воронку модерации, p50/p90, когортный анализ, оконные функции, витрины и синтетический набор данных. [Аналитический кейс](docs/sql-case-study.md) объясняет бизнес-смысл расчётов.
-
-**EN:** [8 SQL modules](sql/README.md) demonstrate data modeling, quality checks, KPIs, moderation funnel, latency percentiles, cohorts, window functions, views and synthetic data. Read the [SQL case study](docs/sql-case-study.md).
+Maintainer: [NickolayBoss](https://github.com/NickolayBoss).
