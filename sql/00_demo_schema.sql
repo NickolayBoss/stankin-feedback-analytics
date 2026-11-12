@@ -1,0 +1,5 @@
+-- Standalone analytics demo schema (separate from legacy Telegram reference DDL)
+CREATE TABLE IF NOT EXISTS departments(id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,name text NOT NULL UNIQUE);
+CREATE TABLE IF NOT EXISTS feedback(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,department_id integer NOT NULL REFERENCES departments(id),category text NOT NULL,created_at timestamptz NOT NULL,first_response_at timestamptz,resolved_at timestamptz,status text NOT NULL CHECK(status IN ('new','in_progress','resolved')),satisfaction smallint CHECK(satisfaction BETWEEN 1 AND 5),CHECK(first_response_at IS NULL OR first_response_at>=created_at),CHECK(resolved_at IS NULL OR resolved_at>=created_at),CHECK(status<>'resolved' OR resolved_at IS NOT NULL));
+CREATE INDEX IF NOT EXISTS idx_feedback_date ON feedback(created_at);
+CREATE INDEX IF NOT EXISTS idx_feedback_open ON feedback(created_at) WHERE status<>'resolved';
