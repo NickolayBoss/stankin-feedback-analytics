@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt
-      - run: python -m compileall -q dashboard.py && pytest -q
+      - run: python -m compileall -q dashboard.py && python -m pytest -q
       - name: PostgreSQL integration
         run: |
           for file in sql/00_demo_schema.sql sql/02_seed.sql sql/03_analytics.sql sql/04_trends.sql sql/05_quality.sql; do
