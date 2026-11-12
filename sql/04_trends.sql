@@ -1,0 +1,3 @@
+WITH weekly AS (SELECT date_trunc('week',created_at AT TIME ZONE 'Europe/Moscow')::date week,category,count(*) tickets FROM feedback GROUP BY 1,2), trends AS (SELECT *,lag(tickets) OVER(PARTITION BY category ORDER BY week) previous_week FROM weekly)
+SELECT week,category,tickets,previous_week,round(100.0*(tickets-previous_week)/nullif(previous_week,0),2) growth_pct FROM trends ORDER BY week DESC,category;
+SELECT category,count(*) open_tickets,count(*) FILTER(WHERE created_at<now()-interval '72 hours') overdue_open FROM feedback WHERE status<>'resolved' GROUP BY category ORDER BY open_tickets DESC;
