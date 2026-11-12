@@ -13,7 +13,7 @@ How can a university identify recurring feedback problems, monitor response dela
 - Analytics: response SLA, resolution rate, CSAT, backlog aging and weekly growth.
 - Business analysis: KPI contracts, stakeholders, acceptance criteria and limitations.
 
-## Run locally
+## Interactive dashboard\nRun the synthetic PostgreSQL analytics dashboard with Docker Compose:\n\n```bash\ncp .env.example .env\n# Edit .env and replace POSTGRES_PASSWORD with a strong local password\ndocker compose up --build -d\n```\n\nOpen **http://localhost:8501**. See [dashboard walkthrough](docs/dashboard.md). The original Telegram bot Dockerfile is preserved as a separate legacy component.\n\n## Run locally
 Requires PostgreSQL 15+ and `psql`. Create an empty database:
 ```bash
 createdb feedback_analytics
@@ -42,6 +42,6 @@ flowchart LR
 ```
 
 The existing [01_schema.sql](sql/01_schema.sql) is a separate legacy Telegram reference schema and is not required for this standalone demo.\n\n## Current status
-**SQL analytics prototype.** A production Telegram bot, automated moderation, deployed dashboard and end-to-end tests are **not yet implemented**. The project is intended to be reproducible and extended in later iterations.
+**SQL analytics prototype with a local Streamlit dashboard.** Docker Compose and CI are included; live PostgreSQL integration and deployment have not yet been independently verified. A production Telegram service is outside this demo scope. The project is intended to be reproducible and extended in later iterations.
 
 Maintainer: [NickolayBoss](https://github.com/NickolayBoss).
